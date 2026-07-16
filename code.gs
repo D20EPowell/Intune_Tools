@@ -10,13 +10,14 @@
 function setSecretCredentials() {
   const scriptProperties = PropertiesService.getScriptProperties();
   scriptProperties.setProperties({
-    'TENANT_ID': 'Nice Try',
-    'CLIENT_ID': 'No codes here',
-    'CLIENT_SECRET': 'Hacker'
+    'TENANT_ID': '<entra tenant ID>',
+    'CLIENT_ID': '<entra app ID from the Overview page>',
+    'CLIENT_SECRET': '<Value of the secret>',
+    'redirectUri': '<URL of the deployed app, ending in /exec>',
+    'SHEET_ID': '<your Google Sheets ID Here>'
   });
   Logger.log("Credentials securely saved!");
 }
-
 
 /**
  * Serves the webpage, acting as a secure gateway.
@@ -26,9 +27,10 @@ function doGet(e) {
   const tenantId = props['TENANT_ID'];
   const clientId = props['CLIENT_ID'];
   const clientSecret = props['CLIENT_SECRET'];
+  const redirectUri = props['redirectUri'];
   
   //const redirectUri = "https://script.google.com/macros/s/AKfycbzB5D-Ot3tlrYaBbWb4dLPyI9E_CybdimFL_tTpfEUh7r5NPTUES5WXMwv5ejh6CKWL/exec";
-  const redirectUri = "https://script.google.com/macros/s/AKfycbwhn9brXG_mLkps6CZw8FH_4cnBuzoC7tt133ZMjhY/dev";
+  //const redirectUri = "https://script.google.com/macros/s/AKfycbwhn9brXG_mLkps6CZw8FH_4cnBuzoC7tt133ZMjhY/dev";
 
   // 1. Returning from Microsoft with an authorization code
   if (e.parameter.code) {
@@ -45,7 +47,7 @@ function doGet(e) {
 
     try {
       // const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-      const tokenUrl = `https://login.microsoftonline.com/oauth2/v2.0/token`;
+      const tokenUrl = `https://login.microsoftonline.com/organizations/oauth2/v2.0/token`;
 
       // CHANGE: We now request the Graph API default scope to get the user's access token
       const payload = {
@@ -113,7 +115,7 @@ function doGet(e) {
   // CHANGE: The authorization URL must request Microsoft Graph scopes from the user
   const scopes = encodeURIComponent("https://graph.microsoft.com/.default offline_access openid profile email");
   // const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&response_mode=query&scope=${scopes}&state=${state}`;
-  const authUrl = `https://login.microsoftonline.com/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&response_mode=query&scope=${scopes}&state=${state}`;
+  const authUrl = `https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&response_mode=query&scope=${scopes}&state=${state}`;
   
   const loginHtml = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; margin-top: 100px; color: #333;">
@@ -127,31 +129,6 @@ function doGet(e) {
   `;
   
   return HtmlService.createHtmlOutput(loginHtml);
-}
-
-/**
- * Exchanges the Auth Code for actual Microsoft Tokens server-side
- */
-function getEntraToken(code, tenantId, clientId, clientSecret, redirectUri) {
-  // const url = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-  const url = `https://login.microsoftonline.com/oauth2/v2.0/token`;
-
-  const payload = {
-    client_id: clientId,
-    client_secret: clientSecret,
-    code: code,
-    redirect_uri: redirectUri,
-    grant_type: "authorization_code"
-  };
-  
-  const options = {
-    method: "post",
-    payload: payload,
-    muteHttpExceptions: true
-  };
-  
-  const res = UrlFetchApp.fetch(url, options);
-  return JSON.parse(res.getContentText());
 }
 
 /**
@@ -559,20 +536,26 @@ function searchPoliciesBatch(policiesChunk, keyword, sessionToken) {
  */
 function logAction(userEmail, action, details, sessionToken) {
   verifySession(sessionToken);
-  const sheetId = "11VRiVMYawtUQQNU6ws43HjMMd-QPuPgKOeaQjU5V-Ag"; 
+  const sheetId = "<your Google Sheets ID Here>"; 
+  
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
-    const timestamp = new Date(); // Generates the exact date and time
+    // Check if they forgot to replace the placeholder
+    if (!sheetId || sheetId.includes("your Google Sheets ID")) {
+      throw new Error("Sheet ID placeholder was not replaced.");
+    }
     
-    // Append row: [Timestamp, User Email, Action, Details]
+    const sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
+    const timestamp = new Date(); 
     sheet.appendRow([timestamp, userEmail, action, details]);
+    
   } catch (e) {
-    console.error("Failed to write to log sheet: " + e.message);
+    // Throw this to the frontend
+    throw new Error("Logging failed: " + e.message);
   }
 }
 
 function triggerPermissions() {
-  SpreadsheetApp.openById("11VRiVMYawtUQQNU6ws43HjMMd-QPuPgKOeaQjU5V-Ag");
+  SpreadsheetApp.openById("<your Google Sheets ID Here>");
 }
 
 /**
