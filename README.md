@@ -10,7 +10,7 @@ A willingness to all this site to access your Google Sheets (for logging, displa
 # Setup
 
 ### A) In Google:
-1. Head to the [GAS console](https://script.google.com/hom) > New project.
+1. Head to the [GAS console](https://script.google.com/home) > New project.
 2. Copy the Code.gs from this repo into the editor
 3. Click the + sign > HTML
 4. Name it ```index``` (it will add .html automatically, since, ya know, you told it it was an HTML)
@@ -44,9 +44,10 @@ A willingness to all this site to access your Google Sheets (for logging, displa
 3. **[IMPORTANT!]** Copy the secret now!  If you don't, you'll lose the Value of the secret and you'll need to create a new one
 4. Go to the overview of the app and copy the Application (client) ID
 5. Go to EntraID Enterprise apps > find this app you just created
-6. Under users and groups, whatever users and groups you want to be able to use these tools
-7. Go back to App registrations > Find this new app
-8. Go to the API Permissions blade under Manage > API permissions > Add a permission
+6. Go to Properties and change the Assignment required? to Yes
+7. Under users and groups, whatever users and groups you want to be able to use these tools
+8. Go back to App registrations > Find this new app
+9. Go to the API Permissions blade under Manage > API permissions > Add a permission
 	* Microsoft Graph
 	* Delegated permissions
 	* Add:
@@ -55,22 +56,23 @@ A willingness to all this site to access your Google Sheets (for logging, displa
 		* ```DeviceManagementRBAC.Read.All```
 		* ```Group.Read.All```
 		* ```User.Read```
-9. Click "Grant admin consent for \<your tenant>" > Yes
+10. Click "Grant admin consent for \<your tenant>" > Yes
   
 ### C) Back to Google:
 We need to create Script Properties, which you can do manually in the Project settings menu, or use the function in the Code.gs
 1. Open the Code.gs file if it's not already
 2. In the setSecretCredentials function, set the specific Entra tenant ID (Entra ID > Overview), Client ID (from the Application (client) ID field of the newly registered app that you correctly followed instructions for), Client Secret (from the Value...), and this GAS' URL ending with ```/exec```.
-3. Next to the Debug button, make sure the dropdown box has the setSecretCredentials function select
-4. Click Run.
-5. [OPTIONAL:] You can check this worked not only in the run log, but also by clicking the Project settings gear and scrolling down to the Script Properties.
-6. **[IMPORTANT!]** Delete those values in the Code.gs file now! Leaving those there will expose the secret to anyone savvy enough.
-7. Click Save (or Ctrl+S)
-8. Click Deploy > Manage Deployments > Edit pencil
+3. Search for the function ```logAction``` and ```triggerPermissions``` and insert the ID of a Google Sheets you create for logging
+4. Next to the Debug button, make sure the dropdown box has the setSecretCredentials function select
+5. Click Run.
+6. [OPTIONAL:] You can check this worked not only in the run log, but also by clicking the Project settings gear and scrolling down to the Script Properties.
+7. **[IMPORTANT!]** Delete those values in the Code.gs file now! Leaving those there will expose the secret to anyone savvy enough.
+8. Click Save (or Ctrl+S)
+9. Click Deploy > Manage Deployments > Edit pencil
 	* Change the version to New version
 	* Add yet another dramatically descriptive description
-9. Click Deploy > Done
-10. Go to the web page (make sure you're using an account that has access to the GAS as set in C.6) > Click the Sign In with Microsoft button
-11. Log in with your MS credentials
-12. Accept the perms
-13. Use dem tools
+10. Click Deploy > Done
+11. Go to the web page (make sure you're using an account that has access to the GAS as set in C.6) > Click the Sign In with Microsoft button
+12. Log in with your MS credentials
+13. Accept the perms
+14. Use dem tools
