@@ -142,9 +142,6 @@ function decodeIdToken(idToken) {
 }
 
 /**
- * Authenticates with Microsoft Entra ID and returns an Access Token
- */
-/**
  * Retrieves the logged-in user's Graph API Access Token from the cache
  */
 function getGraphToken(sessionToken) {
