@@ -177,6 +177,50 @@
 		.hidden {
 			display: none !important;
 		}
+
+    /* Custom Autocomplete Dropdown */
+		.autocomplete-wrapper {
+			position: relative;
+			flex-grow: 1;
+		}
+		
+		.autocomplete-dropdown {
+			position: absolute;
+			top: 100%;
+			left: 0;
+			right: 0;
+			background-color: white;
+			border: 1px solid #ddd;
+			border-top: none;
+			border-radius: 0 0 4px 4px;
+			box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+			max-height: 350px; /* Adjust this to make it taller or shorter */
+			overflow-y: auto;
+			z-index: 1000;
+			display: none; /* Hidden by default */
+		}
+		
+		.autocomplete-item {
+			padding: 10px 15px;
+			cursor: pointer;
+			border-bottom: 1px solid #eee;
+			font-size: 14px;
+		}
+		
+		.autocomplete-item:last-child {
+			border-bottom: none;
+		}
+		
+		.autocomplete-item:hover {
+			background-color: #f1f3f5;
+			color: #0f2b5b;
+			font-weight: bold;
+		}
+
+    #view-group-assignments, .container,
+		.content {
+			overflow: visible !important;
+		}
 	</style>
 </head>
 
@@ -250,15 +294,19 @@
 			</table>
 		</div>
 		<div id="view-group-assignments" class="content hidden">
-			<p>Enter an Entra ID Group Name to find all assigned Intune configurations.</p>
+		<p>Enter an Entra ID Group Name to find all assigned Intune configurations.<br>
+		<span style="font-size: 13px; color: #666; font-style: italic;">All groups accepted, only Security Groups show in the autocomplete dropdown box.</span></p>
+		
+		<div style="display: flex; gap: 10px; margin-bottom: 20px;">
 			
-			<div style="display: flex; gap: 10px; margin-bottom: 20px;">
-				<input type="text" id="groupNameInput" placeholder="e.g. All Users" style="padding: 10px; flex-grow: 1; border: 1px solid #ddd; border-radius: 4px; font-size: 15px;">
-
-        <input type="text" id="groupNameInput" list="securityGroupsList" placeholder="e.g. All Users" style="padding: 10px; flex-grow: 1; border: 1px solid #ddd; border-radius: 4px; font-size: 15px;">
-        <datalist id="securityGroupsList"></datalist>
-				<button id="searchGroupBtn" class="btn" onclick="fetchGroupAssignments()">Search</button>
+			<div class="autocomplete-wrapper">
+				<input type="text" id="groupNameInput" autocomplete="off" placeholder="e.g. All Users" style="width: 100%; box-sizing: border-box; padding: 10px; padding-right: 30px; border: 1px solid #ddd; border-radius: 4px; font-size: 15px;">
+        <span id="dropdownArrow" style="position: absolute; right: 10px; top: 12px; cursor: pointer; color: #666; font-size: 12px; user-select: none;">▼</span>
+				<div id="customDropdown" class="autocomplete-dropdown"></div>
 			</div>
+
+			<button id="searchGroupBtn" class="btn" onclick="fetchGroupAssignments()">Search</button>
+		</div>
 
 			<div id="groupStatusMessage" class="hidden">
 				<div class="loader"></div>
@@ -393,7 +441,9 @@
 			document.getElementById("statusMessage").classList.remove("hidden");
 			document.getElementById("statusText").innerText = "Querying MS Graph API... This may take a hot minute!";
 
-			google.script.run.logAction(currentUserEmail, "Intune Duplicate Serials", "Searched All Windows Devices", SESSION_TOKEN);
+			google.script.run
+        .withFailureHandler(err => alert("⚠️ Admin Warning: " + err.message))
+        .logAction(currentUserEmail, "Intune Duplicate Serials", "Searched for dupe Serial #s", SESSION_TOKEN);
 
 			google.script.run
 				.withSuccessHandler(onSuccess)
@@ -441,24 +491,114 @@
 			document.querySelector(".loader").style.display = "none"; 
 		}
 
-		// --- Group Assignments Logic ---
-		const intuneEndpoints = [
-			{ name: "Device Compliance Policies", path: "/deviceManagement/deviceCompliancePolicies?$expand=Assignments", uiLocation: "Devices > Compliance" },
-			{ name: "Mobile Apps", path: "/deviceAppManagement/mobileApps?$expand=Assignments", uiLocation: "Apps > All apps" },
-			{ name: "App Configurations", path: "/deviceAppManagement/targetedManagedAppConfigurations?$expand=Assignments", uiLocation: "Apps > App configuration policies" },
-			{ name: "iOS App Protections", path: "/deviceAppManagement/iosManagedAppProtections?$expand=Assignments", uiLocation: "Apps > App protection policies" },
-			{ name: "Android App Protections", path: "/deviceAppManagement/androidManagedAppProtections?$expand=Assignments", uiLocation: "Apps > App protection policies" },
-			{ name: "Windows App Protections", path: "/deviceAppManagement/windowsManagedAppProtections?$expand=Assignments", uiLocation: "Apps > App protection policies" },
-			{ name: "MDM WIP Policies", path: "/deviceAppManagement/mdmWindowsInformationProtectionPolicies?$expand=Assignments", uiLocation: "Apps > App protection policies" },
-			{ name: "Configuration Policies", path: "/deviceManagement/configurationPolicies?$expand=Assignments", uiLocation: "Devices > Configuration" },
-			{ name: "Device Configurations", path: "/deviceManagement/deviceConfigurations?$expand=Assignments", uiLocation: "Devices > Configuration" },
-			{ name: "Group Policy Configurations", path: "/deviceManagement/groupPolicyConfigurations?$expand=Assignments", uiLocation: "Devices > Group Policy analytics" },
-			{ name: "Mobile App Configurations", path: "/deviceAppManagement/mobileAppConfigurations?$expand=Assignments", uiLocation: "Apps > App configuration policies" },
-			{ name: "Remediation Scripts", path: "/deviceManagement/deviceHealthScripts?$expand=Assignments", uiLocation: "Devices > Scripts and remediations > Remediations" },
-			{ name: "Platform Scripts", path: "/deviceManagement/deviceManagementScripts?$expand=Assignments", uiLocation: "Devices > Scripts and remediations > Platform scripts" },
-			{ name: "Autopilot Profiles", path: "/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=Assignments", uiLocation: "Devices > Enrollment > Windows > Deployment Profiles" },
+    // --- Load Security Groups for Autocomplete ---
+		// --- Load Security Groups for Custom Autocomplete ---
+		let securityGroupsLoaded = false; 
+		let allSecurityGroups = []; // Array to hold the groups in memory
+
+		function loadSecurityGroupsDropdown() {
+			if (securityGroupsLoaded) return; 
+
+			const input = document.getElementById("groupNameInput");
+			input.placeholder = "Loading security groups... please wait";
+			
+			google.script.run
+				.withSuccessHandler(function(groups) {
+					allSecurityGroups = groups; // Save the raw array
+					input.placeholder = "Select or type a Security Group";
+					securityGroupsLoaded = true;
+				})
+				.withFailureHandler(function(err) {
+					input.placeholder = "Error loading groups. Type name manually.";
+					console.error("Group fetch error: " + err.message);
+				})
+      .getSecurityGroups(SESSION_TOKEN);
+    }
+
+		// --- Custom Autocomplete Filtering Logic ---
+    // Helper function to build and show the dropdown
+    function renderDropdown(filterText) {
+      const dropdown = document.getElementById("customDropdown");
+      dropdown.innerHTML = "";
+      const matches = filterText 
+      ? allSecurityGroups.filter(g => g.toLowerCase().includes(filterText.toLowerCase()))
+      : allSecurityGroups;
+      if (matches.length > 0) {
+        matches.forEach(match => {
+          let item = document.createElement("div");
+          item.className = "autocomplete-item";
+          if (filterText) {
+            const regex = new RegExp("(" + filterText + ")", "gi");
+            item.innerHTML = match.replace(regex, "<strong style='color: #00a7e1;'>$1</strong>");
+          } else {
+            item.textContent = match;
+          }
+
+          // Click an item to select it
+          item.onclick = function(e) {
+            e.stopPropagation(); // Stop click from bubbling up
+            document.getElementById("groupNameInput").value = match;
+            dropdown.style.display = "none";
+          };
+
+          dropdown.appendChild(item);
+        });
+        dropdown.style.display = "block";
+      } else {
+        dropdown.style.display = "none";
+      }
+    }
+    // Trigger when typing
+		document.getElementById("groupNameInput").addEventListener("input", function() {
+			renderDropdown(this.value);
+		});
+
+    // Trigger when clicking inside the input box
+    document.getElementById("groupNameInput").addEventListener("click", function(e) {
+      e.stopPropagation(); 
+      // Only render if the list is loaded
+      if (securityGroupsLoaded) renderDropdown(this.value);
+    });
+
+    // Trigger when clicking the dropdown arrow
+    document.getElementById("dropdownArrow").addEventListener("click", function(e) {
+      e.stopPropagation();
+      const input = document.getElementById("groupNameInput");
+      input.focus(); 
+      // Toggle dropdown behavior (close if open, open if closed)
+      const dropdown = document.getElementById("customDropdown");
+      if (dropdown.style.display === "block") {
+        dropdown.style.display = "none";
+      } else {
+        if (securityGroupsLoaded) renderDropdown(input.value);
+      }
+    });
+
+    // Close the dropdown if the user clicks anywhere else on the page
+    document.addEventListener("click", function(e) {
+      if (!e.target.closest(".autocomplete-wrapper")) {
+        document.getElementById("customDropdown").style.display = "none";
+      }
+    });
+
+    // --- Group Assignments Logic ---
+    const intuneEndpoints = [
+      { name: "Device Compliance Policies", path: "/deviceManagement/deviceCompliancePolicies?$expand=Assignments", uiLocation: "Devices > Compliance" },
+      { name: "Mobile Apps", path: "/deviceAppManagement/mobileApps?$expand=Assignments", uiLocation: "Apps > All apps" },
+      { name: "App Configurations", path: "/deviceAppManagement/targetedManagedAppConfigurations?$expand=Assignments", uiLocation: "Apps > App configuration policies" },
+      { name: "iOS App Protections", path: "/deviceAppManagement/iosManagedAppProtections?$expand=Assignments", uiLocation: "Apps > App protection policies" },
+      { name: "Android App Protections", path: "/deviceAppManagement/androidManagedAppProtections?$expand=Assignments", uiLocation: "Apps > App protection policies" },
+      { name: "Windows App Protections", path: "/deviceAppManagement/windowsManagedAppProtections?$expand=Assignments", uiLocation: "Apps > App protection policies" },
+      { name: "MDM WIP Policies", path: "/deviceAppManagement/mdmWindowsInformationProtectionPolicies?$expand=Assignments", uiLocation: "Apps > App protection policies" },
+      { name: "Configuration Policies", path: "/deviceManagement/configurationPolicies?$expand=Assignments", uiLocation: "Devices > Configuration" },
+      { name: "Device Configurations", path: "/deviceManagement/deviceConfigurations?$expand=Assignments", uiLocation: "Devices > Configuration" },
+      { name: "Group Policy Configurations", path: "/deviceManagement/groupPolicyConfigurations?$expand=Assignments", uiLocation: "Devices > Group Policy analytics" },
+      { name: "Mobile App Configurations", path: "/deviceAppManagement/mobileAppConfigurations?$expand=Assignments", uiLocation: "Apps > App configuration policies" },
+      { name: "Remediation Scripts", path: "/deviceManagement/deviceHealthScripts?$expand=Assignments", uiLocation: "Devices > Scripts and remediations > Remediations" },
+      { name: "Platform Scripts", path: "/deviceManagement/deviceManagementScripts?$expand=Assignments", uiLocation: "Devices > Scripts and remediations > Platform scripts" },
+      { name: "Autopilot Profiles", path: "/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=Assignments", uiLocation: "Devices > Enrollment > Windows > Deployment Profiles" },
       { name: "Tenant Admin Roles", path: "/deviceManagement/roleAssignments", uiLocation: "Tenant administration > Roles" }
-		];
+    ];
 
 		let currentEndpointIndex = 0;
 		let targetGroupId = "";
@@ -467,7 +607,9 @@
 			const groupName = document.getElementById("groupNameInput").value.trim();
 			if (!groupName) return alert("Please enter a group name.");
 
-			google.script.run.logAction(currentUserEmail, "Group Assignment Search", groupName, SESSION_TOKEN);
+      google.script.run
+        .withFailureHandler(err => alert("⚠️ Admin Warning: " + err.message))
+        .logAction(currentUserEmail, "Group Assignment Search", groupName, SESSION_TOKEN);
 
 			// Reset UI for a new search
 			document.getElementById("searchGroupBtn").disabled = true;
@@ -570,7 +712,9 @@
 			const keyword = document.getElementById("keywordInput").value.trim();
 			if (!keyword) return alert("Enter a keyword.");
 
-			google.script.run.logAction(currentUserEmail, "Policy Keyword Search", keyword, SESSION_TOKEN);
+			google.script.run
+        .withFailureHandler(err => alert("⚠️ Admin Warning: " + err.message))
+        .logAction(currentUserEmail, "Policy Keyword Search", keyword, SESSION_TOKEN);
 
 			document.getElementById("searchKeywordBtn").disabled = true;
 			document.getElementById("keywordTableBody").innerHTML = "";
@@ -702,7 +846,9 @@
 						document.getElementById('deleteStatusText').innerText = `Verifying ${serials.length} serials with Graph API... Please wait.`;
 						
 						// Log dry run
-						google.script.run.logAction(currentUserEmail, "Bulk Delete - Verified CSV", `Uploaded ${serials.length} serials for verification.`, SESSION_TOKEN);
+						google.script.run
+              .withFailureHandler(err => alert("⚠️ Admin Warning: " + err.message))
+              .logAction(currentUserEmail, "Bulk Delete - Verified CSV", `Uploaded ${serials.length} serials for verification.`, SESSION_TOKEN);
 						
 						// STEP 1: Verify via Backend
 						google.script.run
@@ -776,7 +922,9 @@
 				document.getElementById('deleteStatusText').innerText = `Executing Delete command on ${verifiedDevicesToExecute.length} devices...`;
 				
 				// Log execution
-				google.script.run.logAction(currentUserEmail, "Bulk Delete - Executed", `Deleted ${verifiedDevicesToExecute.length} verified devices.`, SESSION_TOKEN);
+				google.script.run
+          .withFailureHandler(err => alert("⚠️ Admin Warning: " + err.message))
+          .logAction(currentUserEmail, "Bulk Delete - Executed", `Deleted ${verifiedDevicesToExecute.length} verified devices.`, SESSION_TOKEN);
 				
 				// STEP 2: Execute Deletions Concurrently
 				google.script.run
