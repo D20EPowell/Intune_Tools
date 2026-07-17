@@ -67,7 +67,7 @@ We need to create Script Properties, which we'll do manually for security purpos
 	2. Add script property
 	3. Property: ```CLIENT_SECRET``` Value:\<the Value of the Secret>
 	4. Add script property
-	5. Property: ```SHEET_ID``` Value:\<the ID of a Google sheet for logging>
+	5. Property: ```SHEET_ID``` Value:\<the ID of a Google sheet for logging> (yeah, go do that now, just create a Google Sheet and copy the ID)
 	6. Add script property
 	7. Property: ```TENANT_ID``` Value:\<your entra tenant ID found in Entra ID > overview>
 	8. Add script property
