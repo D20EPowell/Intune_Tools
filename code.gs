@@ -3,23 +3,6 @@
  */
 
 /**
- * 1. RUN THIS FUNCTION ONCE MANUALLY
- * This securely stores your Azure App Registration credentials so they 
- * aren't hardcoded in the source code.
- */
-function setSecretCredentials() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  scriptProperties.setProperties({
-    'TENANT_ID': '<entra tenant ID>',
-    'CLIENT_ID': '<entra app ID from the Overview page>',
-    'CLIENT_SECRET': '<Value of the secret>',
-    'redirectUri': '<URL of the deployed app, ending in /exec>',
-    'SHEET_ID': '<your Google Sheets ID Here>'
-  });
-  Logger.log("Credentials securely saved!");
-}
-
-/**
  * Serves the webpage, acting as a secure gateway.
  */
 function doGet(e) {
