@@ -11,9 +11,6 @@ function doGet(e) {
   const clientId = props['CLIENT_ID'];
   const clientSecret = props['CLIENT_SECRET'];
   const redirectUri = props['redirectUri'];
-  
-  //const redirectUri = "https://script.google.com/macros/s/AKfycbzB5D-Ot3tlrYaBbWb4dLPyI9E_CybdimFL_tTpfEUh7r5NPTUES5WXMwv5ejh6CKWL/exec";
-  //const redirectUri = "https://script.google.com/macros/s/AKfycbwhn9brXG_mLkps6CZw8FH_4cnBuzoC7tt133ZMjhY/dev";
 
   // 1. Returning from Microsoft with an authorization code
   if (e.parameter.code) {
@@ -29,7 +26,6 @@ function doGet(e) {
     CacheService.getUserCache().remove("oauth_state");
 
     try {
-      // const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
       const tokenUrl = `https://login.microsoftonline.com/organizations/oauth2/v2.0/token`;
 
       // CHANGE: We now request the Graph API default scope to get the user's access token
@@ -97,7 +93,6 @@ function doGet(e) {
   
   // CHANGE: The authorization URL must request Microsoft Graph scopes from the user
   const scopes = encodeURIComponent("https://graph.microsoft.com/.default offline_access openid profile email");
-  // const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&response_mode=query&scope=${scopes}&state=${state}`;
   const authUrl = `https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&response_mode=query&scope=${scopes}&state=${state}`;
   
   const loginHtml = `
