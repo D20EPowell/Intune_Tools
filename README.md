@@ -72,12 +72,7 @@ We need to create Script Properties, which we'll do manually for security purpos
 	7. Property: ```TENANT_ID``` Value:\<your entra tenant ID found in Entra ID > overview>
 	8. Add script property
 	9. Property: ```redirectUri``` Value:\<this Script's URL ending in /exec>
-1. Search for the functions `logAction` and `triggerPermissions` and insert the ID of a Google Sheet you created for logging.
-1. Next to the Debug button, make sure the dropdown box has the `setSecretCredentials` function selected.
-1. Click Run.
-1. **[OPTIONAL:]** You can check this worked not only in the run log, but also by clicking the Project settings gear and scrolling down to the Script Properties.
-1. **[IMPORTANT!]** Delete those values in the `Code.gs` file now! Leaving those there will expose the secret to anyone savvy enough.
-1. Click Save (or Ctrl+S).
+1. Click Save script properties.
 1. Click Deploy > Manage Deployments > Edit pencil:
 	* Change the version to New version
 	* Add yet another dramatically descriptive description
