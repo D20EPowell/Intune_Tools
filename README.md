@@ -41,8 +41,8 @@ Create a GAS (Google Apps Script) website that logs in to your Entra tenant and 
 	2. Enter a description, because you're awesome
 	3. Choose an expiration length
 	4. Add
-3. **[IMPORTANT!]** Copy the secret now! If you don't, you'll lose the Value of the secret and you'll need to create a new one.
-4. Go to the Overview of the app and copy the Application (client) ID.
+3. **[IMPORTANT!]** Copy the secret now! If you don't, you'll lose the Value of the secret and you'll need to create a new one. It will be used in C.2.iii.
+4. Go to the Overview of the app and copy the Application (client) ID.  It will be used in C.2.i.
 5. Go to Entra ID Enterprise apps > find this app you just created.
 6. Go to Properties and change "Assignment required?" to Yes.
 7. Under Users and groups, add whichever users and groups you want to be able to use these tools.
