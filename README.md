@@ -1,3 +1,4 @@
+
 # Purpose
 
 Create a GAS (Google Apps Script) website that logs in to your Entra tenant and runs some simple tools using MS Graph calls to do things like type in a group name and see all the places that group is assigned, find devices with duplicate serial numbers, or provide a CSV of device serial numbers to delete those objects out of Intune.
@@ -52,26 +53,37 @@ Create a GAS (Google Apps Script) website that logs in to your Entra tenant and 
 	* Add:
 		* `DeviceManagementConfiguration.Read.All`
 		* `DeviceManagementManagedDevices.ReadWrite.All`
+			* Yes, there is a tool for bulk deleting device objects from a CSV.  Feel free to not grant this if you don't want to use this tool
 		* `DeviceManagementRBAC.Read.All`
 		* `Group.Read.All`
 		* `User.Read`
 10. Click "Grant admin consent for \<your tenant>" > Yes.
   
 ### C) Back to Google:
-We need to create Script Properties, which you can do manually in the Project settings menu, or use the function in the `Code.gs`.
-1. Open the `Code.gs` file if it's not already.
-2. In the `setSecretCredentials` function, set the specific Entra tenant ID (Entra ID > Overview), Client ID (from the Application (client) ID field of the newly registered app that you correctly followed instructions for), Client Secret (from the Value...), and this GAS' URL ending with `/exec`.
-3. Search for the functions `logAction` and `triggerPermissions` and insert the ID of a Google Sheet you created for logging.
-4. Next to the Debug button, make sure the dropdown box has the `setSecretCredentials` function selected.
-5. Click Run.
-6. **[OPTIONAL:]** You can check this worked not only in the run log, but also by clicking the Project settings gear and scrolling down to the Script Properties.
-7. **[IMPORTANT!]** Delete those values in the `Code.gs` file now! Leaving those there will expose the secret to anyone savvy enough.
-8. Click Save (or Ctrl+S).
-9. Click Deploy > Manage Deployments > Edit pencil:
+We need to create Script Properties, which we'll do manually for security purposes
+1. Click the Project Settings gear
+2. Scroll down to the Script Properties section and click Add script Property
+	1. Property: ```CLIENT_ID```	Value: \<entra's application (client) ID>
+	2. Add script property
+	3. Property: ```CLIENT_SECRET``` Value:\<the Value of the Secret>
+	4. Add script property
+	5. Property: ```SHEET_ID``` Value:\<the ID of a Google sheet for logging>
+	6. Add script property
+	7. Property: ```TENANT_ID``` Value:\<your entra tenant ID found in Entra ID > overview>
+	8. Add script property
+	9. Property: ```redirectUri``` Value:\<this Script's URL ending in /exec>
+3. In the `setSecretCredentials` function, set the specific Entra tenant ID (Entra ID > Overview), Client ID (from the Application (client) ID field of the newly registered app that you correctly followed instructions for), Client Secret (from the Value...), and this GAS' URL ending with `/exec`.
+4. Search for the functions `logAction` and `triggerPermissions` and insert the ID of a Google Sheet you created for logging.
+5. Next to the Debug button, make sure the dropdown box has the `setSecretCredentials` function selected.
+6. Click Run.
+7. **[OPTIONAL:]** You can check this worked not only in the run log, but also by clicking the Project settings gear and scrolling down to the Script Properties.
+8. **[IMPORTANT!]** Delete those values in the `Code.gs` file now! Leaving those there will expose the secret to anyone savvy enough.
+9. Click Save (or Ctrl+S).
+10. Click Deploy > Manage Deployments > Edit pencil:
 	* Change the version to New version
 	* Add yet another dramatically descriptive description
-10. Click Deploy > Done.
-11. Go to the web page (make sure you're using an account that has access to the GAS as set in A.6) > Click the Sign In with Microsoft button.
-12. Log in with your MS credentials.
-13. Accept the perms.
-14. Use dem tools.
+11. Click Deploy > Done.
+12. Go to the web page (make sure you're using an account that has access to the GAS as set in A.6) > Click the Sign In with Microsoft button.
+13. Log in with your MS credentials.
+14. Accept the perms.
+15. Use dem tools.
